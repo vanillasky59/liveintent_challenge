@@ -5,8 +5,7 @@ Python3 and pip should be installed
 	pip install -r requirements.txt
 2. run test from command line:
 		- run the test with default parameters:
-		
-			pytest --html=report.html tests\test_routing.py
+		   pytest --html=report.html tests\test_routing.py
 		
 		- run the test with custom parameters:
 			pytest --html=report.html tests\test_routing.py --parameter_name="value" --parameter_name_2="value_2" etc.
