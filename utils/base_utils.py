@@ -7,10 +7,11 @@ def get_stream_shard_iterator(kinesis_client, stream_name):
 
     shards = kinesis_stream['StreamDescription']['Shards']
     shard_ids = [shard['ShardId'] for shard in shards]
-    iter_response = kinesis_client.get_shard_iterator(StreamName=stream_name, ShardId=shard_ids[0],
-                                                      ShardIteratorType="LATEST")
-    shard_iterator = iter_response['ShardIterator']
-    return shard_iterator
+
+    iters_response = [kinesis_client.get_shard_iterator(StreamName=stream_name, ShardId=shard_id,
+                                                        ShardIteratorType="LATEST") for shard_id in shard_ids]
+
+    return [iter_response['ShardIterator'] for iter_response in iters_response]
 
 
 def get_request(route_url, seed):
@@ -32,9 +33,15 @@ def get_request(route_url, seed):
     return transaction_id
 
 
-def get_record_data(kinesis_client, iterator):
-    record = kinesis_client.get_records(ShardIterator=iterator, Limit=1)
-    if len(record["Records"]) == 0:
-        return None
-    else:
-        return json.loads(record["Records"][0]["Data"])
+def get_record_data(kinesis_client, iterators):
+    records = [kinesis_client.get_records(ShardIterator=iterator, Limit=200) for iterator in iterators]
+    data = []
+    for record in records:
+        for record_data in record["Records"]:
+            if "Data" in record_data:
+                data.append(json.loads(record_data["Data"]))
+    return data
+
+
+def find_record(records, transaction_id, seed):
+    return any(record["uuid"] == transaction_id and record["seed"] == int(seed) for record in records)
